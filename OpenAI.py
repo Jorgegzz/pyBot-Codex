@@ -6,19 +6,20 @@ def explain(code):
              f"{code}\n\n" \
              "\"\"\"\n" \
              "Here is what the code above is doing:\n" \
+             "1."
 
     response = openai.Completion.create(
         engine="davinci-codex",
         prompt=prompt,
         temperature=0,
-        max_tokens=64,
+        max_tokens=64*3,
         top_p=1.0,
-        frequency_penalty=0.0,
+        frequency_penalty=0.4,
         presence_penalty=0.0,
         stop=["\"\"\""]
     )
     story = response['choices'][0]['text']
-    print(f"prompt: {code}\nquery: {story}")
+    print(f"prompt:\n{code}\nquery: {story}")
     return str(story)
 
 
@@ -37,7 +38,7 @@ def code(instructions):
         stop=['"""']
     )
     story = response['choices'][0]['text']
-    print(f"prompt: {instructions}\nquery: {story}")
+    print(f"prompt:\n{instructions}\nquery: {story}")
     return str(story)
 
 
