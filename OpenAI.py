@@ -19,8 +19,30 @@ def explain(code):
         stop=["\"\"\""]
     )
     story = response['choices'][0]['text']
-    print(f"prompt:\n{code}\nquery: {story}")
+    print(f"prompt:\n{code}\nquery:\n1.{story}")
     return str(story)
+
+
+def fix(code):
+    prompt = "##### Fix bugs in the below function\n\n" \
+             "### Buggy Python" \
+             f"{code}\n\n" \
+             "### Fixed Python" \
+
+    response = openai.Completion.create(
+        engine="davinci-codex",
+        prompt=prompt,
+        temperature=0,
+        max_tokens=182,
+        top_p=1.0,
+        frequency_penalty=0.0,
+        presence_penalty=0.0,
+        stop=["###"]
+    )
+    story = response['choices'][0]['text']
+    print(f"prompt:\n{code}\nquery:\n{story}")
+    return str(story)
+
 
 
 def code(instructions):
