@@ -49,26 +49,27 @@ async def on_ready():
     help_embed.add_field(
         name="**/code `instructions:`**",
         value="*pyBot* will code following your instructions\n\n" \
-              "Ex. `/code instructions: \n1. import random\n2. Print a random number between 1 and 100`",
+              "Ex. `/code instructions: Import random. Then, Print a random number between 1 and 100`",
         inline=False
     )
     help_embed.add_field(
         name="**explain**",
         value="*pyBot* will explain the piece of code you prompt\n\n" \
-              f"`Use: Right click on a message with a code block PC *support for now* > applications > explain`",
+              f"Use: `Right click on a message with a code block PC *support for now* > applications > explain`",
         inline=False
     )
     help_embed.add_field(
         name="**fix**",
         value="*pyBot* will *fix* the piece of code you prompt\n\n" \
-              f"`Use: Right click on a message with a code block PC *support for now* > applications > explain`",
+              f"Use: `Right click on a message with a code block PC *support for now* > applications > explain`",
         inline=False
     )
     help_embed.set_thumbnail(
         url=CODEBLOCK_EX
     )
     help_embed.set_footer(
-        text="Warning: this bot is still being developed and you may encounter errors"
+        text="Remember to user the codeblock format for python in the message commands (shown in the thumbnail)\n\n"
+             "Warning: this bot is still being developed and you may encounter errors"
     )
 
 
@@ -87,7 +88,7 @@ async def code(ctx, *, instructions):
     print(ctx.author)
     await ctx.defer()
     code = OpenAI.code(instructions)
-    code = await pyify(code)
+    code = await pyify(code.replace("  \n", "").replace("\n\n\n\n", ""))
     await ctx.respond(f"**You can do that by following the code below:**\n{code}")
 
 

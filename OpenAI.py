@@ -33,7 +33,7 @@ def fix(code):
         engine="davinci-codex",
         prompt=prompt,
         temperature=0,
-        max_tokens=182,
+        max_tokens=300,
         top_p=1.0,
         frequency_penalty=0.0,
         presence_penalty=0.0,
