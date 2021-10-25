@@ -1,7 +1,8 @@
 import os
+
 import discord
 from discord.ext import commands
-from discord.commands import Option
+
 import OpenAI
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -55,13 +56,19 @@ async def on_ready():
     help_embed.add_field(
         name="**explain**",
         value="*pyBot* will explain the piece of code you prompt\n\n" \
-              f"Use: `Right click on a message with a code block PC *support for now* > applications > explain`",
+              f"Use: `Right click on a message with a code block (PC support for now) > applications > explain`",
         inline=False
     )
     help_embed.add_field(
         name="**fix**",
         value="*pyBot* will *fix* the piece of code you prompt\n\n" \
-              f"Use: `Right click on a message with a code block PC *support for now* > applications > explain`",
+              f"Use: `Right click on a message with a code block (PC support for now) > applications > explain`",
+        inline=False
+    )
+    help_embed.add_field(
+        name="**translate to js**",
+        value="*pyBot* will translate the piece of code you prompt to JavaScript\n" \
+              f"Use: `Right click on a message with a code block (PC support for now) > applications > explain`",
         inline=False
     )
     help_embed.set_thumbnail(
@@ -71,6 +78,15 @@ async def on_ready():
         text="Remember to user the codeblock format for python in the message commands (shown in the thumbnail)\n\n"
              "Warning: this bot is still being developed and you may encounter errors"
     )
+
+    global no_code_embed
+
+    no_code_embed = discord.Embed(
+        title="There is no code in your message!",
+        color=discord.Color.red(),
+        description="Remember to format to python codeblock as seen in thumbnail"
+    )
+    no_code_embed.set_thumbnail(url=CODEBLOCK_EX)
 
 
 # SlashCommands
@@ -99,6 +115,7 @@ async def ask(ctx, *, question):
     answer = OpenAI.ask(question)
     await ctx.respond(f"{answer}")
 
+
 # User commands
 
 
@@ -107,17 +124,11 @@ async def explain(ctx, message:discord.Message):
     code = str(message.content)
     code = await find_between(code, "```py", "```")
     if code == "":
-        embed = discord.Embed(
-            title="There is no code in your message!",
-            color=discord.Color.red(),
-            description="Remember to format to python codeblock as seen in thumbnail"
-        )
-        embed.set_thumbnail(url=CODEBLOCK_EX)
-        await ctx.respond(embed=embed)
+        await ctx.respond(embed=no_code_embed)
     else:
         await ctx.defer()
         explanation = OpenAI.explain(code)
-        await ctx.respond(f"**Here is what the code is doing:**\n`1.{explanation}`")
+        await ctx.respond(f"**Here is what the code is doing**\n`1.{explanation}`")
 
 
 @client.message_command(guild_ids=SERVER_ID, name ="fix")
@@ -125,13 +136,7 @@ async def fix(ctx, message:discord.Message):
     buggy_code = str(message.content)
     buggy_code = await find_between(buggy_code, "```py", "```")
     if buggy_code == "":
-        embed = discord.Embed(
-            title="There is no code in your message!",
-            color=discord.Color.red(),
-            description="Remember to format to python codeblock as seen in thumbnail"
-        )
-        embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/689908647807156229/901671041041063966/python_codeblock.png")
-        await ctx.respond(embed=embed)
+        await ctx.respond(embed=no_code_embed)
     else:
         await ctx.defer()
         fixed_code = OpenAI.fix(buggy_code)
@@ -140,6 +145,18 @@ async def fix(ctx, message:discord.Message):
         else:
             fixed_code = await pyify(fixed_code)
             await ctx.respond(f"**Maybe try using this code**\n{fixed_code}")
+
+@client.message_command(guild_ids=SERVER_ID, name = "translate to JS")
+async def translate_js(ctx, message:discord.Message):
+    python_code = str(message.content)
+    python_code = await find_between(python_code, "```py", "```")
+    if python_code == "":
+        await ctx.respond(embed=no_code_embed)
+    else:
+        await ctx.defer()
+        js_code = OpenAI.translate_js(python_code)
+        await ctx.respond(f"**Here is the code in JS**\n```js\n{js_code}\n```")
+
 
 if __name__ == "__main__":
     client.run(BOT_TOKEN)
