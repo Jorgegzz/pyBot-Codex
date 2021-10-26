@@ -2,6 +2,7 @@ import os
 
 import discord
 from discord.ext import commands
+from pyston import PystonClient,File
 
 import OpenAI
 
@@ -29,6 +30,14 @@ async def find_between(s, first, last ):
         return s[start:end]
     except ValueError:
         return ""
+
+async def runcode(code):
+    client = PystonClient()
+    output = client.execute("python",
+    [
+        File(code)
+    ])
+    return output
 
 
 @client.event
@@ -101,7 +110,14 @@ async def help(ctx):
 
 @client.slash_command(description="Codes for you using the instructions you provide (python)", guild_ids=SERVER_ID)
 async def code(ctx, *, instructions):
-    print(ctx.author)
+    if len(instructions.strip()) == 4:
+        await ctx.respond(
+            embed=discord.Embed(
+                title="Not enough words",
+                description="Make sure to give a long enough description :/"
+            )
+        )
+        return
     await ctx.defer()
     code = OpenAI.code(instructions)
     code = await pyify(code.replace("  \n", "").replace("\n\n\n\n", ""))
@@ -146,16 +162,12 @@ async def fix(ctx, message:discord.Message):
             fixed_code = await pyify(fixed_code)
             await ctx.respond(f"**Maybe try using this code**\n{fixed_code}")
 
-@client.message_command(guild_ids=SERVER_ID, name = "translate to JS")
-async def translate_js(ctx, message:discord.Message):
-    python_code = str(message.content)
-    python_code = await find_between(python_code, "```py", "```")
-    if python_code == "":
-        await ctx.respond(embed=no_code_embed)
-    else:
-        await ctx.defer()
-        js_code = OpenAI.translate_js(python_code)
-        await ctx.respond(f"**Here is the code in JS**\n```js\n{js_code}\n```")
+
+@client.message_command(guild_ids=SERVER_ID, name = "run")
+async def run(ctx, message:discord.Message):
+    code = await find_between(message.content, "```py", "```")
+    output = (await runcode(code))
+    await ctx.respond(f"**Here is the output** ```{output}```")
 
 
 if __name__ == "__main__":

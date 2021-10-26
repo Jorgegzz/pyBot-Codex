@@ -23,23 +23,6 @@ def explain(code):
     return str(story)
 
 
-def translate_js(code):
-    prompt = f"#Python to JavaScript:\nPython\n¨{code}\n\nJavascript:"
-    response = openai.Completion.create(
-        engine="davinci-codex",
-        prompt=prompt,
-        temperature=0,
-        max_tokens=500,
-        top_p=1.0,
-        frequency_penalty=0.0,
-        presence_penalty=0.0,
-        stop=["#"]
-    )
-    story = response['choices'][0]['text']
-    print(f"prompt:\n{code}\nquery:\n{story}")
-    return str(story)
-
-
 def fix(code):
     prompt = "##### Fix bugs in the below function\n\n" \
              "### Buggy Python" \
