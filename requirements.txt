@@ -1,2 +1,2 @@
 openai~=0.10.5
-aiopyston~=1.2.1
+py-cord~=2.0.0a4145

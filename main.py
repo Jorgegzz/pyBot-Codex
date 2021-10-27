@@ -2,7 +2,7 @@ import os
 
 import discord
 from discord.ext import commands
-from pyston import PystonClient, File
+from pyston import PystonClient,File
 
 import OpenAI
 
@@ -15,7 +15,6 @@ CODEBLOCK_EX = "https://cdn.discordapp.com/attachments/689908647807156229/901671
 client = commands.Bot(command_prefix=PREFIX, activity=discord.Game(name=f"/help"))
 client.remove_command("help")
 
-
 async def pyify(code):
     return f"```py\n{code}```"
 
@@ -24,18 +23,17 @@ async def depyify(code):
     return code.replace("```py\n", "").replace("```", "")
 
 
-async def find_between(s, first, last):
+async def find_between(s, first, last ):
     try:
-        start = s.index(first) + len(first)
-        end = s.index(last, start)
+        start = s.index( first ) + len( first )
+        end = s.index( last, start )
         return s[start:end]
     except ValueError:
         return ""
 
-
 async def runcode(code):
     client = PystonClient()
-    output = await client.execute("python",
+    output = client.execute("python",
     [
         File(code)
     ])
@@ -77,8 +75,8 @@ async def on_ready():
         inline=False
     )
     help_embed.add_field(
-        name="**run**",
-        value="*pyBot* will run the piece of code you prompt using the pyston API\n" \
+        name="**translate to js**",
+        value="*pyBot* will translate the piece of code you prompt to JavaScript\n" \
               f"Use: `Right click on a message with a code block (PC support for now) > applications > explain`",
         inline=False
     )
@@ -112,7 +110,7 @@ async def help(ctx):
 
 @client.slash_command(description="Codes for you using the instructions you provide (python)", guild_ids=SERVER_ID)
 async def code(ctx, *, instructions):
-    if len(instructions.split()) == 4:
+    if len(instructions.strip()) == 4:
         await ctx.respond(
             embed=discord.Embed(
                 title="Not enough words",
@@ -136,18 +134,9 @@ async def ask(ctx, *, question):
 
 # User commands
 
-@client.message_command(guild_ids=SERVER_ID, name="run")
-async def run(ctx, message: discord.Message):
-    code = await find_between(message.content, "```py", "```")
-    if code == "":
-        await ctx.respond(embed=no_code_embed)
-    else:
-        output = await runcode(code)
-        await ctx.respond(f"**here is the output**```\n{output}\n```")
 
-
-@client.message_command(guild_ids=SERVER_ID, name="explain")
-async def explain(ctx, message: discord.Message):
+@client.message_command(guild_ids=SERVER_ID, name ="explain")
+async def explain(ctx, message:discord.Message):
     code = str(message.content)
     code = await find_between(code, "```py", "```")
     if code == "":
@@ -158,8 +147,8 @@ async def explain(ctx, message: discord.Message):
         await ctx.respond(f"**Here is what the code is doing**\n`1.{explanation}`")
 
 
-@client.message_command(guild_ids=SERVER_ID, name="fix")
-async def fix(ctx, message: discord.Message):
+@client.message_command(guild_ids=SERVER_ID, name ="fix")
+async def fix(ctx, message:discord.Message):
     buggy_code = str(message.content)
     buggy_code = await find_between(buggy_code, "```py", "```")
     if buggy_code == "":
@@ -172,6 +161,13 @@ async def fix(ctx, message: discord.Message):
         else:
             fixed_code = await pyify(fixed_code)
             await ctx.respond(f"**Maybe try using this code**\n{fixed_code}")
+
+
+@client.message_command(guild_ids=SERVER_ID, name = "run")
+async def run(ctx, message:discord.Message):
+    code = await find_between(message.content, "```py", "```")
+    output = (await runcode(code))
+    await ctx.respond(f"**Here is the output** ```{output}```")
 
 
 if __name__ == "__main__":
