@@ -1,6 +1,8 @@
 import openai
 
+
 # Content Generation
+
 
 def explain(code):
     prompt = "# Python 3\n" \
@@ -87,7 +89,34 @@ def ask(question):
 
 # Content filtering
 
-def filter(prompt):
+
+def topic_related(question):
+    import os
+    import openai
+
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+
+    response = openai.Completion.create(
+        engine="curie-instruct-beta",
+        prompt="Write \"Yes\" if the sentence is related to computers, otherwise answer \"No\"\n\n"
+               f"S: {question}\n"
+               "Y/N:",
+        temperature=0,
+        max_tokens=1,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=0,
+        stop=["\n"]
+    )
+    story = response['choices'][0]['text']
+    print(story)
+    if story == " Yes":
+        return True
+    else:
+        return False
+
+
+def secure_filter(prompt):
     content_to_classify = prompt
 
     response = openai.Completion.create(

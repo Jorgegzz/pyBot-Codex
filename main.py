@@ -2,7 +2,7 @@ import os
 
 import discord
 from discord.ext import commands
-from pyston import PystonClient,File
+from pyston import PystonClient, File
 
 import OpenAI
 
@@ -12,34 +12,33 @@ PREFIX = "py "
 SERVER_ID = [896214560816656404]
 
 CODEBLOCK_EX = "https://cdn.discordapp.com/attachments/689908647807156229/901671041041063966/python_codeblock.png"
-client = commands.Bot(command_prefix=PREFIX, activity=discord.Game(name=f"/help"))
-client.remove_command("help")
+bot = commands.Bot(command_prefix=PREFIX, activity=discord.Game(name=f"/help"))
+bot.remove_command("help")
+
 
 async def pyify(code):
     return f"```py\n{code}```"
 
 
-async def find_between(s, first, last ):
+async def find_between(s, first, last):
     try:
-        start = s.index( first ) + len( first )
-        end = s.index( last, start )
+        start = s.index(first) + len(first)
+        end = s.index(last, start)
         return s[start:end]
     except ValueError:
         return ""
 
+
 async def runcode(code):
-    client = PystonClient()
-    output = await client.execute("python",
-    [
-        File(code)
-    ])
+    pyston = PystonClient()
+    output = await pyston.execute("python", [File(code)])
     return output
 
 
-@client.event
+@bot.event
 async def on_ready():
-    print("Bot has successfully logged in as: {}".format(client.user))
-    print("Bot ID: {}\n".format(client.user.id))
+    print("Bot has successfully logged in as: {}".format(bot.user))
+    print("Bot ID: {}\n".format(bot.user.id))
 
     # Load embeds
     global help_embed
@@ -96,19 +95,19 @@ async def on_ready():
     )
     no_code_embed.set_thumbnail(url=CODEBLOCK_EX)
 
-    global not_enough_words
+    global not_related_to_topic
 
-    not_enough_words = discord.Embed(
-        title="Not enough words",
-        description="Make sure to give a long enough description :/",
-        color=discord.Color.red()
+    not_related_to_topic = discord.Embed(
+        title="Unrelated to Topic",
+        description="Please be sure to prompt to computer science related prompts",
+        color=discord.Color.blue()
     )
 
     global unsafe_prompt
 
     unsafe_prompt = discord.Embed(
         title="Unsafe content",
-        description="Your prompt has been detected as unsafe,"\
+        description="Your prompt has been detected as unsafe," \
                     " please make sure to remove profane language, NSFW and hateful content ",
         color=discord.Color.red()
     )
@@ -119,7 +118,7 @@ async def on_ready():
         title="Sensitive content",
         description="Your prompt has been detected as sensitive," \
                     " be aware that this is a educational bot and wont perform as expected when being prompted with"
-                    "politics, race, nationality or religion",
+                    " politics, race, nationality or religion",
         color=discord.Color.yellow()
     )
 
@@ -127,50 +126,54 @@ async def on_ready():
 # SlashCommands
 
 
-@client.slash_command(description="Provides an embed with some info & examples for commands", guild_ids=SERVER_ID)
+@bot.slash_command(description="Provides an embed with some info & examples for commands", guild_ids=SERVER_ID)
 async def help(ctx):
     await ctx.respond(embed=help_embed, ephemeral=True)
 
 
-@client.slash_command(description="Codes for you using the instructions you provide (python)", guild_ids=SERVER_ID)
+@bot.slash_command(description="Codes for you using the instructions you provide (python)", guild_ids=SERVER_ID)
 async def code(ctx, *, instructions):
-    if len(instructions.split()) <= 4: # minimum length is 4
-        await ctx.respond(embed=not_enough_words)
-        return
-
-    await ctx.defer()
-    code = OpenAI.code(instructions)
-    code = await pyify(code.replace("  \n", "").replace("\n\n\n\n", ""))
-    await ctx.respond(f"**You can do that by following the code below:**\n{code}")
-
-
-@client.slash_command(description="Ask for any computer science/programming question", guild_ids=SERVER_ID)
-async def ask(ctx, *, question):
-    if len(question.split()) <= 3: # optimal length is 3
-        await ctx.respond(embed=not_enough_words, ephemeral=True)
-        return
-
-    safety_tag = OpenAI.filter(question)
+    safety_tag = OpenAI.secure_filter(instructions)
 
     if safety_tag == "2":
         await ctx.respond(embed=unsafe_prompt, ephemeral=True)
         return
 
+    await ctx.defer()
+
+    code = OpenAI.code(instructions)
+    code = await pyify(code.replace("  \n", "").replace("\n\n\n\n", ""))
+    code = "**You can do that by following the code below:**" + code
+
     if safety_tag == "1":
-        embed = sensitive_prompt
+        await ctx.respond(code, embed=sensitive_prompt)
+
     else:
-        embed = discord.Embed()
+        await ctx.respond(code)
+
+
+@bot.slash_command(description="Ask for any computer science/programming question", guild_ids=SERVER_ID)
+async def ask(ctx, *, question):
+    safety_tag = OpenAI.secure_filter(question)
+
+    if safety_tag == "2":
+        await ctx.respond(embed=unsafe_prompt, ephemeral=True)
+        return
+
     await ctx.defer()
     answer = OpenAI.ask(question)
-    await ctx.respond(answer, embed=embed)
 
+    if safety_tag == "1":
+        await ctx.respond(answer, embed=sensitive_prompt)
+    else:
+        await ctx.respond(answer)
 
 
 # User commands
 
 
-@client.message_command(guild_ids=SERVER_ID, name ="explain")
-async def explain(ctx, message:discord.Message):
+@bot.message_command(guild_ids=SERVER_ID, name="explain")
+async def explain(ctx, message: discord.Message):
     code = str(message.content)
     code = await find_between(code, "```py", "```")
     if code == "":
@@ -181,8 +184,8 @@ async def explain(ctx, message:discord.Message):
         await ctx.respond(f"**Here is what the code is doing**\n`1.{explanation}`")
 
 
-@client.message_command(guild_ids=SERVER_ID, name ="fix")
-async def fix(ctx, message:discord.Message):
+@bot.message_command(guild_ids=SERVER_ID, name="fix")
+async def fix(ctx, message: discord.Message):
     buggy_code = str(message.content)
     buggy_code = await find_between(buggy_code, "```py", "```")
     if buggy_code == "":
@@ -197,8 +200,8 @@ async def fix(ctx, message:discord.Message):
             await ctx.respond(f"**Maybe try using this code**\n{fixed_code}")
 
 
-@client.message_command(guild_ids=SERVER_ID, name = "run")
-async def run(ctx, message:discord.Message):
+@bot.message_command(guild_ids=SERVER_ID, name="run")
+async def run(ctx, message: discord.Message):
     code = await find_between(message.content, "```py", "```")
     if code == "":
         await ctx.respond(embed=no_code_embed)
@@ -209,4 +212,4 @@ async def run(ctx, message:discord.Message):
 
 
 if __name__ == "__main__":
-    client.run(BOT_TOKEN)
+    bot.run(BOT_TOKEN)
