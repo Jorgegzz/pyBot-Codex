@@ -123,6 +123,41 @@ async def on_ready():
     )
 
 
+# Buttons
+
+
+class CodeResponseMenu(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.value = None
+
+    @discord.ui.button(label="Run", style=discord.ButtonStyle.green)
+    async def run(self, button: discord.ui.Button, interaction: discord.Interaction):
+        code = await find_between(interaction.message.content, "```py", "```")
+        if code.find("input(") != -1:
+            button.disabled = True
+            await interaction.response.edit_message(
+                content=f"{interaction.message.content}\n`input() cant be runned here`", view=self
+            )
+            return
+        if code == "":
+            await interaction.response.send_message(embed=no_code_embed)
+        else:
+            output = await runcode(code)
+            print(output)
+            await interaction.response.send_message(f"**Here is the output**```\n{output}\n```")
+
+    @discord.ui.button(label="Explain", style=discord.ButtonStyle.blurple)
+    async def explain(self, button: discord.ui.Button, interaction: discord.Interaction):
+        code = interaction.message.content
+        code = await find_between(code, "```py", "```")
+        if code == "":
+            await interaction.response.send_message(embed=no_code_embed)
+        else:
+            explanation = OpenAI.explain(code)
+            await interaction.response.send_message(f"**Here is what the code is doing**\n`1.{explanation}`")
+
+
 # SlashCommands
 
 
@@ -133,6 +168,8 @@ async def help(ctx):
 
 @bot.slash_command(description="Codes for you using the instructions you provide (python)", guild_ids=SERVER_ID)
 async def code(ctx, *, instructions):
+    view = CodeResponseMenu()
+
     safety_tag = OpenAI.secure_filter(instructions)
 
     if safety_tag == "2":
@@ -145,11 +182,7 @@ async def code(ctx, *, instructions):
     code = await pyify(code.replace("  \n", "").replace("\n\n\n\n", ""))
     code = "**You can do that by following the code below:**" + code
 
-    if safety_tag == "1":
-        await ctx.respond(code, embed=sensitive_prompt)
-
-    else:
-        await ctx.respond(code)
+    await ctx.respond(code, view=view)
 
 
 @bot.slash_command(description="Ask for any computer science/programming question", guild_ids=SERVER_ID)

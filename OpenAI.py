@@ -47,7 +47,6 @@ def fix(code):
     return str(story)
 
 
-
 def code(instructions):
     prompt = '"""\n' \
              f'{instructions}' \
@@ -60,7 +59,7 @@ def code(instructions):
         top_p=1.0,
         frequency_penalty=0.4,
         presence_penalty=0.0,
-        stop=['"""']
+        stop=['\n\n\n']
     )
     story = response['choices'][0]['text']
     print(f"prompt:\n{instructions}\nquery: {story}")
